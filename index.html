@@ -1,136 +1,457 @@
-﻿<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>工程记账</title>
-    <style>
-        /* 移动端适配样式 */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: sans-serif; background: #f5f7fa; padding: 10px; }
-        .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: #2c3e50; margin-bottom: 20px; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; color: #34495e; }
-        select, input, button { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; }
-        button { background: #3498db; color: white; border: none; cursor: pointer; margin-top: 10px; }
-        button:hover { background: #2980b9; }
-        .records { margin-top: 30px; }
-        .record-item { padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
-        .record-info { flex: 1; }
-        .record-category { font-weight: bold; color: #2c3e50; }
-        .record-date { font-size: 12px; color: #7f8c8d; }
-        .record-amount { font-weight: bold; font-size: 18px; }
-        .income { color: #27ae60; }
-        .expense { color: #e74c3c; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>工程记账</h1>
-        
-        <!-- 项目选择 -->
-        <div class="form-group">
-            <label for="project">工程项目</label>
-            <select id="project">
-                <option value="项目A">XX建筑项目</option>
-                <option value="项目B">XX道路工程</option>
-                <option value="其他">其他项目</option>
-            </select>
-        </div>
-        
-        <!-- 收支类型 -->
-        <div class="form-group">
-            <label for="type">收支类型</label>
-            <select id="type">
-                <option value="income">收入（工程款）</option>
-                <option value="expense">支出（材料/人工/机械）</option>
-            </select>
-        </div>
-        
-        <!-- 费用分类 -->
-        <div class="form-group">
-            <label for="category">费用分类</label>
-            <select id="category">
-                <option value="工程款">工程款</option>
-                <option value="材料费">材料费</option>
-                <option value="人工费">人工费</option>
-                <option value="机械费">机械费</option>
-                <option value="租赁费">租赁费</option>
-                <option value="其他">其他费用</option>
-            </select>
-        </div>
-        
-        <!-- 金额输入 -->
-        <div class="form-group">
-            <label for="amount">金额（元）</label>
-            <input type="number" id="amount" step="0.01" min="0.01" placeholder="0.00">
-        </div>
-        
-        <button id="addBtn">添加记录</button>
-        
-        <!-- 记录列表 -->
-        <div class="records">
-            <h2>收支记录</h2>
-            <div id="recordsList">
-                <p style="text-align: center; color: #999; margin-top: 20px;">暂无记录</p >
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // 数据存储
-        const STORAGE_KEY = 'engineering_records';
-        
-        // 页面加载时初始化
-        document.addEventListener('DOMContentLoaded', function() {
-            renderRecords();
-        });
-        
-        // 添加记录按钮事件
-        document.getElementById('addBtn').addEventListener('click', function() {
-            const project = document.getElementById('project').value;
-            const type = document.getElementById('type').value;
-            const category = document.getElementById('category').value;
-            const amount = parseFloat(document.getElementById('amount').value);
-            
-            if (!amount || amount <= 0) {
-                alert('请输入有效的金额');
-                return;
-            }
-            
-            const record = {
-                id: Date.now(),
-                project: project,
-                type: type,
-                category: category,
-                amount: amount,
-                date: new Date().toLocaleString()
-            };
-            
-            // 保存到本地存储
-            const records = getRecords();
-            records.push(record);
-            saveRecords(records);
-            
-            // 更新界面
-            renderRecords();
-            
-            // 清空输入框
-            document.getElementById('amount').value = '';
-        });
-        
-        // 获取所有记录
-        function getRecords() {
-            const data = localStorage.getItem(STORAGE_KEY);
-            return data ? JSON.parse(data) : [];
-        }
-        
-        // 保存记录
-        function saveRecords(records) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
-        }
-        
-        // 渲染记录列表
-        function renderRecords() {
-            const records = getRecords();
-            const recordsList = document.getElementById('recordsList');
-      
+﻿☐<!DOCTYPE html>
+ <html lang="zh-CN">
+ <head>
+     <meta charset="UTF-8">
+     <title>工程记账助手·全能版</title>
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <style>
+         *{margin:0;padding:0;box-sizing:border-box;font-family:微软雅黑, sans-serif;}
+         body{background:#f4f7fa;padding:20px;max-width:1200px;margin:0 auto;}
+         .title{text-align:center;font-size:26px;margin-bottom:20px;color:#111;}
+         .tab-box{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+         .tab{padding:10px 18px;background:#fff;border:1px solid #ddd;border-radius:8px;cursor:pointer;font-size:15px;}
+         .tab.active{background:#009955;color:#fff;border-color:#009955;}
+         .page{display:none;background:#fff;padding:20px;border-radius:12px;margin-bottom:20px;box-shadow:0 2px 10px rgba(0,0,0,0.05);}
+         .page.show{display:block;}
+         .form-item{margin-bottom:14px;}
+         label{display:block;margin-bottom:6px;color:#333;font-weight:500;}
+         input,select,textarea{width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:14px;}
+         .row{display:flex;gap:12px;flex-wrap:wrap;}
+         .row .form-item{flex:1;min-width:220px;}
+         button{padding:10px 20px;background:#009955;color:#fff;border:none;border-radius:6px;cursor:pointer;margin-top:6px;font-size:14px;}
+         .btn-danger{background:#ff4444;}
+         .btn-warning{background:#ff9800;}
+         .btn-primary{background:#2196F3;}
+         .search-box{padding:10px;background:#f8f9fa;border-radius:6px;margin-bottom:12px;display:flex;gap:10px;flex-wrap:wrap;}
+         .search-box input,.search-box select{flex:1;min-width:150px;}
+         .stat-row{display:flex;gap:15px;flex-wrap:wrap;margin-bottom:18px;}
+         .stat-card{flex:1;min-width:180px;background:#e8fff4;padding:16px;border-radius:8px;text-align:center;}
+         .stat-card h4{font-size:14px;color:#555;}
+         .stat-card p{font-size:22px;font-weight:bold;color:#009955;margin-top:6px;}
+         .stat-card.red p{color:#ff4444;}
+         .stat-card.blue p{color:#2196F3;}
+         table{width:100%;border-collapse:collapse;margin-top:10px;}
+         th,td{padding:11px;text-align:left;border-bottom:1px solid #eee;font-size:14px;}
+         th{background:#fafafa;color:#333;}
+         .in{color:#009955;font-weight:bold;}
+         .out{color:#ff4444;font-weight:bold;}
+         .debt{color:#ff9800;font-weight:bold;}
+         .tip{color:#666;font-size:13px;margin-top:4px;}
+         .img-box{margin-top:8px;}
+         .receipt-img{max-width:120px;max-height:80px;border-radius:6px;border:1px solid #ddd;cursor:pointer;}
+         .print-area{display:none;}
+         @media print{
+             body *{visibility:hidden;}
+             .print-area, .print-area *{visibility:visible;}
+             .print-area{position:absolute;left:0;top:0;width:100%;}
+         }
+     </style>
+ </head>
+ <body>
+ <h2 class="title">工程记账助手 · 全能版</h2>
+ <div class="tab-box">
+     <div class="tab active" data-target="add">快速记账</div>
+     <div class="tab" data-target="list">账单明细</div>
+     <div class="tab" data-target="worker">工人工资</div>
+     <div class="tab" data-target="debt">欠款管理</div>
+     <div class="tab" data-target="stat">收支统计</div>
+ </div>
+ <!-- 1. 快速记账 -->
+ <div class="page show" id="add">
+     <div class="row">
+         <div class="form-item">
+             <label>记账类型</label>
+             <select id="billType">
+                 <option value="in">工程款收入</option>
+                 <option value="out">材料支出</option>
+                 <option value="worker">工人工资</option>
+                 <option value="debt">应收欠款</option>
+                 <option value="other">其他收支</option>
+             </select>
+         </div>
+         <div class="form-item">
+             <label>项目工地</label>
+             <input type="text" id="project" placeholder="例：1号楼主体、外墙班组">
+         </div>
+     </div>
+     <div class="row">
+         <div class="form-item">
+             <label>金额（元）</label>
+             <input type="number" id="money" placeholder="输入数字" min="0" step="0.01">
+         </div>
+         <div class="form-item">
+             <label>经手人/班组</label>
+             <input type="text" id="operator" placeholder="张三班组、材料商">
+         </div>
+     </div>
+     <div class="form-item">
+         <label>备注说明</label>
+         <textarea id="remark" rows="3" placeholder="例：水泥、沙子、钢筋、生活费、进度款"></textarea>
+     </div>
+     <div class="form-item">
+         <label>收据拍照（可选）</label>
+         <input type="file" id="receiptImg" accept="image/*" capture="camera">
+         <div class="img-box" id="imgPreview"></div>
+     </div>
+     <button onclick="saveBill()">保存记录</button>
+ </div>
+ <!-- 2. 账单明细 -->
+ <div class="page" id="list">
+     <div class="search-box">
+         <select id="filterType">
+             <option value="">全部类型</option>
+             <option value="in">收入</option>
+             <option value="out">支出</option>
+             <option value="worker">工资</option>
+             <option value="debt">欠款</option>
+         </select>
+         <input type="text" id="s_project" placeholder="搜索项目">
+         <input type="text" id="s_key" placeholder="搜索备注/经手人">
+         <button onclick="renderList()">筛选</button>
+         <button class="btn-primary" onclick="exportExcel()">导出 Excel</button>
+         <button class="btn-primary" onclick="printBill()">打印账单</button>
+         <button class="btn-danger" onclick="clearAll()">清空数据</button>
+     </div>
+     <table>
+         <thead>
+             <tr>
+                 <th>时间</th>
+                 <th>类型</th>
+                 <th>项目</th>
+                 <th>金额</th>
+                 <th>经手人</th>
+                 <th>备注</th>
+                 <th>收据</th>
+             </tr>
+         </thead>
+         <tbody id="listTable"></tbody>
+     </table>
+ </div>
+ <!-- 3. 工人工资 -->
+ <div class="page" id="worker">
+     <div class="form-item">
+         <label>工人姓名</label>
+         <input type="text" id="w_name" placeholder="输入姓名">
+     </div>
+     <div class="row">
+         <div class="form-item">
+             <label>工天/工作量</label>
+             <input type="text" id="w_day" placeholder="例：20天 / 120㎡">
+         </div>
+         <div class="form-item">
+             <label>工资金额</label>
+             <input type="number" id="w_money" placeholder="应付工资" min="0">
+         </div>
+     </div>
+     <div class="form-item">
+         <label>所属工地</label>
+         <input type="text" id="w_project" placeholder="工地/班组">
+     </div>
+     <button onclick="addWorker()">添加工资记录</button>
+     <div style="margin-top:20px;">
+         <h3 style="margin-bottom:10px;font-size:16px;">工人工资列表</h3>
+         <table>
+             <thead>
+                 <tr>
+                     <th>姓名</th>
+                     <th>工天/量</th>
+                     <th>工资</th>
+                     <th>工地</th>
+                     <th>时间</th>
+                 </tr>
+             </thead>
+             <tbody id="workerTable"></tbody>
+         </table>
+     </div>
+ </div>
+ <!-- 4. 欠款管理 -->
+ <div class="page" id="debt">
+     <div class="row">
+         <div class="form-item">
+             <label>欠款方</label>
+             <input type="text" id="d_name" placeholder="甲方、包工头、客户">
+         </div>
+         <div class="form-item">
+             <label>欠款金额</label>
+             <input type="number" id="d_money" min="0">
+         </div>
+     </div>
+     <div class="form-item">
+         <label>欠款项目</label>
+         <input type="text" id="d_project" placeholder="工程/材料">
+     </div>
+     <div class="form-item">
+         <label>备注</label>
+         <input type="text" id="d_remark" placeholder="未结工程款、材料欠款">
+     </div>
+     <button onclick="addDebt()">添加欠款</button>
+     <button class="btn-warning" onclick="clearDebt()" style="margin-left:10px;">清空欠款</button>
+     <div style="margin-top:20px;">
+         <h3 style="margin-bottom:10px;font-size:16px;">欠款记录</h3>
+         <table>
+             <thead>
+                 <tr>
+                     <th>欠款方</th>
+                     <th>金额</th>
+                     <th>项目</th>
+                     <th>备注</th>
+                     <th>时间</th>
+                 </tr>
+             </thead>
+             <tbody id="debtTable"></tbody>
+         </table>
+     </div>
+ </div>
+ <!-- 5. 收支统计 -->
+ <div class="page" id="stat">
+     <div class="stat-row">
+         <div class="stat-card">
+             <h4>总收入</h4>
+             <p id="totalIn">0.00</p>
+         </div>
+         <div class="stat-card red">
+             <h4>总支出</h4>
+             <p id="totalOut">0.00</p>
+         </div>
+         <div class="stat-card blue">
+             <h4>当前利润</h4>
+             <p id="totalProfit">0.00</p>
+         </div>
+     </div>
+     <h3 style="margin:15px 0 10px;font-size:16px;">按项目统计</h3>
+     <table>
+         <thead>
+             <tr>
+                 <th>项目名称</th>
+                 <th>收入</th>
+                 <th>支出</th>
+                 <th>结余</th>
+             </tr>
+         </thead>
+         <tbody id="projectTable"></tbody>
+     </table>
+ </div>
+ <!-- 打印专用区域 -->
+ <div class="print-area" id="printArea"></div>
+ <script>
+ // 切换页面
+ document.querySelectorAll('.tab').forEach(tab => {
+     tab.addEventListener('click', () => {
+         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+         tab.classList.add('active');
+         const target = tab.dataset.target;
+         document.querySelectorAll('.page').forEach(p => p.classList.remove('show'));
+         document.getElementById(target).classList.add('show');
+         refreshAll();
+     });
+ });
+ // 图片预览
+ const imgInput = document.getElementById('receiptImg');
+ const imgPreview = document.getElementById('imgPreview');
+ let currentImg = '';
+ imgInput.onchange = function(){
+     const f = this.files[0];
+     if(!f) return;
+     const reader = new FileReader();
+     reader.onload = e=>{
+         currentImg = e.target.result;
+         imgPreview.innerHTML = `<img src="${currentImg}" class="receipt-img">`;
+     };
+     reader.readAsDataURL(f);
+ };
+ // 数据读取
+ function getBills()  { return JSON.parse(localStorage.getItem('bills')||'[]'); }
+ function getWorker() { return JSON.parse(localStorage.getItem('worker')||'[]'); }
+ function getDebt()   { return JSON.parse(localStorage.getItem('debt')||'[]'); }
+ // 保存账单
+ function saveBill(){
+     const type = document.getElementById('billType').value;
+     const project = document.getElementById('project').value.trim();
+     const money = parseFloat(document.getElementById('money').value)||0;
+     const operator = document.getElementById('operator').value.trim();
+     const remark = document.getElementById('remark').value.trim();
+     const img = currentImg;
+     if(!project || money<=0){alert('请填写项目和金额');return;}
+     const bills = getBills();
+     bills.push({
+         time:new Date().toLocaleString(),type,project,money,operator,remark,img
+     });
+     localStorage.setItem('bills',JSON.stringify(bills));
+     alert('保存成功');
+     document.getElementById('money').value='';
+     document.getElementById('remark').value='';
+     imgInput.value = '';
+     imgPreview.innerHTML = '';
+     currentImg = '';
+     refreshAll();
+ }
+ // 工人工资
+ function addWorker(){
+     const name = document.getElementById('w_name').value.trim();
+     const day = document.getElementById('w_day').value.trim();
+     const money = parseFloat(document.getElementById('w_money').value)||0;
+     const project = document.getElementById('w_project').value.trim();
+     if(!name || money<=0){alert('姓名和金额不能为空');return;}
+     const list = getWorker();
+     list.push({name,day,money,project,time:new Date().toLocaleString()});
+     localStorage.setItem('worker',JSON.stringify(list));
+     alert('添加成功');
+     document.getElementById('w_name').value='';
+     document.getElementById('w_money').value='';
+     renderWorker();
+ }
+ // 欠款
+ function addDebt(){
+     const name = document.getElementById('d_name').value.trim();
+     const money = parseFloat(document.getElementById('d_money').value)||0;
+     const project = document.getElementById('d_project').value.trim();
+     const remark = document.getElementById('d_remark').value.trim();
+     if(!name || money<=0){alert('请填写欠款方和金额');return;}
+     const list = getDebt();
+     list.push({name,money,project,remark,time:new Date().toLocaleString()});
+     localStorage.setItem('debt',JSON.stringify(list));
+     alert('添加成功');
+     document.getElementById('d_name').value='';
+     document.getElementById('d_money').value='';
+     document.getElementById('d_remark').value='';
+     renderDebt();
+ }
+ // 渲染列表
+ function renderList(){
+     const list = getBills();
+     const ftype = document.getElementById('filterType').value;
+     const sp = document.getElementById('s_project').value.toLowerCase();
+     const sk = document.getElementById('s_key').value.toLowerCase();
+     let html='';
+     list.forEach(item=>{
+         if(ftype && item.type!=ftype) return;
+         const p = item.project.toLowerCase();
+         const k = (item.remark+item.operator).toLowerCase();
+         if(sp && !p.includes(sp)) return;
+         if(sk && !k.includes(sk)) return;
+         let t = '收入';
+         let cls = 'in';
+         if(item.type=='out'){t='支出';cls='out';}
+         if(item.type=='worker'){t='工资';cls='out';}
+         if(item.type=='debt'){t='欠款';cls='debt';}
+         if(item.type=='other'){t='其他';cls=item.money>0?'in':'out';}
+         const imgStr = item.img ? `<img src="${item.img}" class="receipt-img" onclick="window.open(this.src)">` : '-';
+         html+=`<tr>
+             <td>${item.time}</td>
+             <td>${t}</td>
+             <td>${item.project}</td>
+             <td class="${cls}">${item.money.toFixed(2)}</td>
+             <td>${item.operator||'-'}</td>
+             <td>${item.remark||'-'}</td>
+             <td>${imgStr}</td>
+         </tr>`;
+     });
+     document.getElementById('listTable').innerHTML = html;
+ }
+ function renderWorker(){
+     const list = getWorker();
+     let html='';
+     list.forEach(item=>{
+         html+=`<tr>
+             <td>${item.name}</td>
+             <td>${item.day}</td>
+             <td class="out">${item.money.toFixed(2)}</td>
+             <td>${item.project}</td>
+             <td>${item.time}</td>
+         </tr>`;
+     });
+     document.getElementById('workerTable').innerHTML = html;
+ }
+ function renderDebt(){
+     const list = getDebt();
+     let html='';
+     list.forEach(item=>{
+         html+=`<tr>
+             <td>${item.name}</td>
+             <td class="debt">${item.money.toFixed(2)}</td>
+             <td>${item.project}</td>
+             <td>${item.remark}</td>
+             <td>${item.time}</td>
+         </tr>`;
+     });
+     document.getElementById('debtTable').innerHTML = html;
+ }
+ // 统计
+ function renderStat(){
+     const list = getBills();
+     let inTotal=0,outTotal=0;
+     const project = {};
+     list.forEach(item=>{
+         const m = item.money;
+         const isIn = item.type=='in' || item.type=='debt';
+         if(isIn) inTotal+=m; else outTotal+=m;
+         if(!project[item.project]) project[item.project]={in:0,out:0};
+         if(isIn) project[item.project].in+=m;
+         else project[item.project].out+=m;
+     });
+     document.getElementById('totalIn').innerText = inTotal.toFixed(2);
+     document.getElementById('totalOut').innerText = outTotal.toFixed(2);
+     document.getElementById('totalProfit').innerText = (inTotal-outTotal).toFixed(2);
+     let html='';
+     for(let p in project){
+         const i = project[p].in;
+         const o = project[p].out;
+         html+=`<tr>
+             <td>${p}</td>
+             <td class="in">${i.toFixed(2)}</td>
+             <td class="out">${o.toFixed(2)}</td>
+             <td>${(i-o).toFixed(2)}</td>
+         </tr>`;
+     }
+     document.getElementById('projectTable').innerHTML = html;
+ }
+ // 导出 Excel（CSV）
+ function exportExcel(){
+     const list = getBills();
+     let csv = "时间,类型,项目,金额,经手人,备注\n";
+     list.forEach(item=>{
+         let t = '收入';
+         if(item.type=='out')t='支出';
+         if(item.type=='worker')t='工资';
+         if(item.type=='debt')t='欠款';
+         if(item.type=='other')t='其他';
+         const line = `${item.time},${t},${item.project},${item.money},${item.operator||''},${item.remark||''}`;
+         csv += line + "\n";
+     });
+     const blob = new Blob([new Uint8Array([0xEF,0xBB,0xBF]),csv],{type:"text/csv"});
+     const a = document.createElement('a');
+     a.href = URL.createObjectURL(blob);
+     a.download = "工程记账账单_"+new Date().toLocaleDateString()+".csv";
+     a.click();
+ }
+ // 打印
+ function printBill(){
+     const list = getBills();
+     let html = `<h2 style="text-align:center;">工程记账单</h2>`;
+     html += `<table border="1" width="100%" style="border-collapse:collapse;">
+     <tr><th>时间</th><th>类型</th><th>项目</th><th>金额</th><th>经手人</th><th>备注</th></tr>`;
+     list.forEach(item=>{
+         let t = '收入';
+         if(item.type=='out')t='支出';if(item.type=='worker')t='工资';if(item.type=='debt')t='欠款';if(item.type=='other')t='其他';
+         html+=`<tr>
+         <td>${item.time}</td>
+         <td>${t}</td>
+         <td>${item.project}</td>
+         <td>${item.money.toFixed(2)}</td>
+         <td>${item.operator||'-'}</td>
+         <td>${item.remark||'-'}</td>
+         </tr>`;
+     });
+     html+="</table>";
+     document.getElementById('printArea').innerHTML = html;
+     window.print();
+ }
+ // 清空
+ function clearAll(){ if(confirm('确定删除所有账单？')){ localStorage.removeItem('bills'); refreshAll(); } }
+ function clearDebt(){ if(confirm('清空所有欠款？')){ localStorage.removeItem('debt'); renderDebt(); } }
+ function refreshAll(){ renderList(); renderWorker(); renderDebt(); renderStat(); }
+ // 初始化
+ refreshAll();
+ </script>
+ </body>
+ </html>
